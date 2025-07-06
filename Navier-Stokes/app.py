@@ -101,35 +101,28 @@ if "frame" not in st.session_state:
 if "playing" not in st.session_state:
     st.session_state.playing = False
 
-def next_frame():
-    if st.session_state.frame < steps - 1:
-        st.session_state.frame += 1
-
-def prev_frame():
-    if st.session_state.frame > 0:
-        st.session_state.frame -= 1
-
-def play():
-    st.session_state.playing = True
-
-def pause():
-    st.session_state.playing = False
-
 # --- Controls for animation ---
 col1, col2, col3, col4 = st.columns([1,1,1,8])
 with col1:
-    st.button("◀️ Prev", on_click=prev_frame)
+    if st.button("◀️ Prev"):
+        st.session_state.frame = max(0, st.session_state.frame - 1)
+        st.session_state.playing = False
 with col2:
     if not st.session_state.playing:
-        st.button("▶️ Play", on_click=play)
+        if st.button("▶️ Play"):
+            st.session_state.playing = True
     else:
-        st.button("⏸ Pause", on_click=pause)
+        if st.button("⏸ Pause"):
+            st.session_state.playing = False
 with col3:
-    st.button("Next ▶️", on_click=next_frame)
+    if st.button("Next ▶️"):
+        st.session_state.frame = min(steps-1, st.session_state.frame + 1)
+        st.session_state.playing = False
 with col4:
-    st.slider("Step", 0, steps-1, st.session_state.frame, key="frame_slider")
+    frame_slider = st.slider("Step", 0, steps-1, st.session_state.frame, key="frame_slider")
+    st.session_state.frame = frame_slider
 
-# --- Animate if playing ---
+# --- Animate if playing (only advances one frame per rerun) ---
 if st.session_state.playing:
     time.sleep(speed/1000)
     if st.session_state.frame < steps - 1:
