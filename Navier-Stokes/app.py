@@ -106,8 +106,7 @@ def make_frame(frame):
     # --- FIXED streamplot ---
     strm = ax.streamplot(grid_x, grid_y, grad_x, grad_y, color=mag, linewidth=1.5,
                          cmap='cool', density=streamline_density)
-    for col in strm.lines.collections:
-        col.set_alpha(0.55)
+    strm.lines.set_alpha(0.55)  # <---- FIX: set alpha directly on the LineCollection
     for i in range(n_traj):
         pts = np.array([traj[t][i] for t in range(frame+1)])
         for j in range(1, len(pts)):
