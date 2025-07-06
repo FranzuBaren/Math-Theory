@@ -7,18 +7,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy.stats import gaussian_kde
-import io
 
 st.set_page_config(layout="wide")
 st.title("Navier-Stokes, Diffusion Models, and MNIST Classification: A Unified Flow")
 
 st.markdown("""
 This dashboard visualizes the deep parallels between **Navier-Stokes equations** (fluid flow), **diffusion models** (generative AI), and **MNIST classification**.  
-- **Blue background:** Probability "fluid" density
-- **Colored arrows:** Drift/score field (Navier-Stokes velocity analog)
-- **Black lines:** Classifier decision boundaries
-- **Rainbow lines:** Stochastic digit trajectories
-- **Digit label:** Classifier prediction as digit flows
+- **Blue background:** Probability "fluid" density  
+- **Colored arrows:** Drift/score field (Navier-Stokes velocity analog)  
+- **Black lines:** Classifier decision boundaries  
+- **Rainbow lines:** Stochastic digit trajectories  
+- **Digit label:** Classifier prediction as digit flows  
+---
 """)
 
 # --- Data and model setup ---
@@ -87,7 +87,9 @@ grid_x, grid_y = np.meshgrid(
 grid_points = np.vstack([grid_x.ravel(), grid_y.ravel()]).T
 pred_class = classifier_decision(grid_points).reshape(grid_x.shape)
 
-# --- Animation ---
+# --- Interactive slider for animation ---
+step = st.slider("Step", 0, steps-1, 0)
+
 fig, ax = plt.subplots(figsize=(8,8))
 cmap = cm.get_cmap('rainbow', n_traj)
 
@@ -119,12 +121,8 @@ def make_frame(frame):
     )
     ax.axis('off')
 
-from matplotlib import animation
-anim = animation.FuncAnimation(fig, make_frame, frames=steps, interval=speed)
-buf = io.BytesIO()
-anim.save(buf, writer='pillow', format='gif')
-
-st.image(buf.getvalue(), caption="Animated probability flow, drift, and classification", use_column_width=True)
+make_frame(step)
+st.pyplot(fig)
 
 st.markdown("""
 ---
@@ -135,5 +133,5 @@ st.markdown("""
 - **Rainbow lines** are stochastic trajectories of injected digits.
 - **Digit label** shows the classifier's prediction as each digit flows.
 ---
-**Inspired by:** [Navier-Stokes and Diffusion Models: Theoretical Parallels](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/44523901/9ed6ce3e-45f0-42f9-8eef-47fe634804e9/Navier_Stokes_and_Fluidodynamics-1.pdf)[1]
+**Inspired by:** [Navier-Stokes and Diffusion Models: Theoretical Parallels](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/44523901/9ed6ce3e-45f0-42f9-8eef-47fe634804e9/Navier_Stokes_and_Fluidodynamics-1.pdf)
 """)
