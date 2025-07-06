@@ -103,8 +103,11 @@ def make_frame(frame):
     mag = np.sqrt(grad_x**2 + grad_y**2)
     ax.quiver(grid_x[skip], grid_y[skip], grad_x[skip], grad_y[skip], mag[skip],
               cmap='plasma', scale=40, width=0.008, alpha=0.7)
-    ax.streamplot(grid_x, grid_y, grad_x, grad_y, color=mag, linewidth=1.5,
-                  cmap='cool', density=streamline_density, arrowsize=1.5, alpha=0.55)
+    # --- FIXED streamplot ---
+    strm = ax.streamplot(grid_x, grid_y, grad_x, grad_y, color=mag, linewidth=1.5,
+                         cmap='cool', density=streamline_density)
+    for col in strm.lines.collections:
+        col.set_alpha(0.55)
     for i in range(n_traj):
         pts = np.array([traj[t][i] for t in range(frame+1)])
         for j in range(1, len(pts)):
