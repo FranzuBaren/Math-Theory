@@ -7,7 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from scipy.stats import gaussian_kde
-import time
 
 st.set_page_config(layout="wide")
 st.title("Navier-Stokes, Diffusion Models, and MNIST Classification: Flow Animation")
@@ -21,7 +20,6 @@ This dashboard visualizes the deep parallels between **Navier-Stokes equations**
 ---
 """)
 
-# --- Data and model setup ---
 @st.cache_resource
 def load_data_and_models():
     mnist = datasets.MNIST(root='./data', train=True, download=True, transform=transforms.ToTensor())
@@ -41,7 +39,6 @@ alphas = 1 - betas
 alphas_cumprod = torch.cumprod(alphas, dim=0)
 
 def q_sample(x0, t, noise_seed=None):
-    # Deterministic noise for reproducibility of the trajectory
     if noise_seed is not None:
         torch.manual_seed(noise_seed + t)
     noise = torch.randn_like(x0)
@@ -67,25 +64,21 @@ streamline_density = st.sidebar.slider("Streamline density", 0.5, 4.0, 2.0)
 fade = st.sidebar.slider("Trail fade", 0.5, 0.98, 0.85)
 speed = st.sidebar.slider("Animation speed (ms/frame)", 50, 400, 120)
 
-# --- Choose a sample of the selected digit ---
 indices = (labels_2d == label).nonzero(as_tuple=True)[0]
 sample_idx = st.sidebar.selectbox("Sample index", list(range(len(indices))), 0)
 chosen_idx = indices[sample_idx].item()
 orig_point = torch.tensor(images_2d[chosen_idx], dtype=torch.float32)
 
-# --- Simulate the trajectory for this particle ---
-noise_seed = 42  # Ensures reproducible noise for the trajectory
+noise_seed = 42
 particle_traj = []
 for t in range(steps):
     p = q_sample(orig_point, t, noise_seed=noise_seed)
     particle_traj.append(p.numpy())
 
-# --- For the background flow, use all data ---
 all_traj = []
 for t in range(steps):
     all_traj.append(q_sample(torch.tensor(images_2d, dtype=torch.float32), t).numpy())
 
-# --- Grid for density/drift/decision ---
 x_min, x_max = images_2d[:,0].min()-1, images_2d[:,0].max()+1
 y_min, y_max = images_2d[:,1].min()-1, images_2d[:,1].max()+1
 grid_x, grid_y = np.meshgrid(
@@ -95,43 +88,23 @@ grid_x, grid_y = np.meshgrid(
 grid_points = np.vstack([grid_x.ravel(), grid_y.ravel()]).T
 pred_class = classifier_decision(grid_points).reshape(grid_x.shape)
 
-# --- Animation state ---
 if "frame" not in st.session_state:
     st.session_state.frame = 0
-if "playing" not in st.session_state:
-    st.session_state.playing = False
 
-# --- Controls for animation ---
 col1, col2, col3, col4 = st.columns([1,1,1,8])
 with col1:
     if st.button("◀️ Prev"):
         st.session_state.frame = max(0, st.session_state.frame - 1)
-        st.session_state.playing = False
 with col2:
-    if not st.session_state.playing:
-        if st.button("▶️ Play"):
-            st.session_state.playing = True
-    else:
-        if st.button("⏸ Pause"):
-            st.session_state.playing = False
-with col3:
-    if st.button("Next ▶️"):
+    if st.button("▶️ Next"):
         st.session_state.frame = min(steps-1, st.session_state.frame + 1)
-        st.session_state.playing = False
+with col3:
+    if st.button("⏮ Reset"):
+        st.session_state.frame = 0
 with col4:
     frame_slider = st.slider("Step", 0, steps-1, st.session_state.frame, key="frame_slider")
     st.session_state.frame = frame_slider
 
-# --- Animate if playing (only advances one frame per rerun) ---
-if st.session_state.playing:
-    time.sleep(speed/1000)
-    if st.session_state.frame < steps - 1:
-        st.session_state.frame += 1
-        st.experimental_rerun()
-    else:
-        st.session_state.playing = False
-
-# --- Draw the current frame ---
 frame = st.session_state.frame
 fig, ax = plt.subplots(figsize=(8,8))
 density, grad_x, grad_y = estimate_score(all_traj[frame], grid_x, grid_y)
@@ -145,7 +118,6 @@ ax.quiver(grid_x[skip], grid_y[skip], grad_x[skip], grad_y[skip], mag[skip],
 strm = ax.streamplot(grid_x, grid_y, grad_x, grad_y, color=mag, linewidth=1.5,
                      cmap='cool', density=streamline_density)
 strm.lines.set_alpha(0.55)
-# Particle trajectory (fading trail)
 pts = np.array(particle_traj[:frame+1])
 for j in range(1, len(pts)):
     ax.plot(pts[j-1:j+1,0], pts[j-1:j+1,1], color='red', alpha=fade**(len(pts)-j), linewidth=3)
