@@ -1,0 +1,5 @@
+title: "Fränzu's GitHub"
+markdown: kramdown
+kramdown:
+  math_engine: mathjax
+theme: minima
